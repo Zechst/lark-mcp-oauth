@@ -1,0 +1,41 @@
+# Render Blueprint — Lark MCP remote OAuth server (Phase 1: validate on free tier)
+#
+# This deploys the patched fork as a remote, multi-user, per-user-OAuth MCP server,
+# reachable from claude.ai (custom connector) and Claude Code (claude mcp add --transport http).
+#
+# NOTE ON FREE TIER: free web services have an EPHEMERAL filesystem (no persistent disk),
+# so encrypted OAuth tokens survive only while the instance is alive — users re-auth after
+# any redeploy/restart. This is fine for validating the OAuth flow. For durable tokens,
+# upgrade to a paid plan, attach a disk, and set LARK_MCP_STORAGE_DIR (see DEPLOY.md, Phase 2).
+services:
+  - type: web
+    name: lark-mcp-oauth
+    runtime: node
+    plan: free
+    region: singapore # pick the region closest to your users / Lark tenant
+    buildCommand: yarn install && yarn build
+    # $PORT is injected by Render; bind 0.0.0.0. App ID/secret/domain come from env vars below.
+    startCommand: >-
+      node dist/cli.js mcp
+      -a $APP_ID -s $APP_SECRET
+      -d $LARK_DOMAIN
+      -m streamable --host 0.0.0.0 -p $PORT
+      --oauth --token-mode user_access_token
+      --scope wiki:wiki,docx:document,bitable:app,drive:drive,offline_access
+      -t preset.doc.default,preset.base.default
+    healthCheckPath: /health
+    envVars:
+      # The public HTTPS origin of THIS service. Must equal https://<name>.onrender.com
+      # (or your custom domain). Drives the OAuth issuer/callback URLs — register
+      # "<PUBLIC_BASE_URL>/callback" as the redirect URL in the Lark app console.
+      - key: PUBLIC_BASE_URL
+        sync: false
+      # 64-char hex (32 bytes). Generate: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+      - key: LARK_MCP_ENCRYPTION_KEY
+        sync: false
+      - key: APP_ID
+        sync: false
+      - key: APP_SECRET
+        sync: false
+      - key: LARK_DOMAIN
+        value: https://open.larksuite.com
