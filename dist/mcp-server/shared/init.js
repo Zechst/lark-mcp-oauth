@@ -50,6 +50,7 @@ function initOAPIMcpServer(options, authHandler) {
         throw new Error('Missing App Credentials');
     }
     let allowTools = options.tools || [];
+    // Expand any preset names (e.g. preset.doc.default) into their concrete tool names.
     for (const [presetName, presetTools] of Object.entries(larkmcp.presetTools)) {
         if (allowTools.includes(presetName)) {
             allowTools = [...presetTools, ...allowTools];
@@ -57,10 +58,35 @@ function initOAPIMcpServer(options, authHandler) {
     }
     // Unique
     allowTools = Array.from(new Set(allowTools));
+    // Classify the -t entries: preset markers are dropped (already expanded above), entries
+    // containing a dot are concrete tool names (e.g. sheets.v3.spreadsheet.create), and bare
+    // words are whole projects (e.g. "sheets", "mail", "calendar") enabled via allowProjects.
+    // Project selection turns on a domain that has no preset without listing every tool by hand.
+    // The tokenMode filter still applies downstream, so user_access_token mode keeps only the
+    // user-capable tools within a selected project.
+    const presetNames = new Set(Object.keys(larkmcp.presetTools));
+    const resolvedTools = [];
+    const resolvedProjects = [];
+    for (const entry of allowTools) {
+        if (presetNames.has(entry)) {
+            continue;
+        }
+        if (entry.includes('.')) {
+            resolvedTools.push(entry);
+        }
+        else {
+            resolvedProjects.push(entry);
+        }
+    }
     // Create MCP Server
     const mcpServer = new mcp_js_1.McpServer({ id: 'lark-mcp-server', name: 'Feishu/Lark MCP Server', version: version_1.currentVersion });
-    const toolsOptions = allowTools.length
-        ? { allowTools: allowTools, language: options.language }
+    const hasSelection = resolvedTools.length > 0 || resolvedProjects.length > 0;
+    const toolsOptions = hasSelection
+        ? {
+            allowTools: resolvedTools,
+            allowProjects: resolvedProjects,
+            language: options.language,
+        }
         : { language: options.language };
     const larkClient = new larkmcp.LarkMcpTool({
         appId,
