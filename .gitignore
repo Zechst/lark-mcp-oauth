@@ -2,7 +2,9 @@
 node_modules/
 
 # Build
-dist/
+# NOTE: dist/ is intentionally committed on this deploy branch — Render's free build
+# tier lacks the RAM to run `tsc` over the @larksuiteoapi/node-sdk type surface (tsc OOMs).
+# We ship the prebuilt output and Render only installs runtime deps. Rebuild with `yarn build`.
 build/
 lib/
 

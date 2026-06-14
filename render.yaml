@@ -13,7 +13,10 @@ services:
     runtime: node
     plan: free
     region: singapore # pick the region closest to your users / Lark tenant
-    buildCommand: yarn install && yarn build
+    # dist/ is committed (see .gitignore note): Render's free builder OOMs running tsc over
+    # the node-sdk type surface. --ignore-scripts skips the package's `prepare` (yarn build)
+    # so we only install runtime deps and run the prebuilt output.
+    buildCommand: yarn install --ignore-scripts
     # $PORT is injected by Render; bind 0.0.0.0. App ID/secret/domain come from env vars below.
     startCommand: >-
       node dist/cli.js mcp

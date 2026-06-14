@@ -53,8 +53,13 @@ Server endpoint: `POST <PUBLIC_BASE_URL>/mcp`. OAuth callback: `<PUBLIC_BASE_URL
 
 **Option B — manual web service:**
 - New → Web Service → connect the GitHub repo.
-- Runtime: **Node**. Build: `yarn install && yarn build`.
+- Runtime: **Node**. Build: `yarn install --ignore-scripts`.
   Start: see `startCommand` in `render.yaml`.
+  > Build note: `dist/` is committed to the deploy branch. Render's **free** builder doesn't
+  > have enough RAM to run `tsc` over the `@larksuiteoapi/node-sdk` type surface (it OOMs), so
+  > we ship the prebuilt output and only install runtime deps. After changing any `src/` file,
+  > run `yarn build` locally and commit the updated `dist/`. (On a paid plan with more build
+  > RAM you can instead use `yarn install && yarn build` and gitignore `dist/`.)
 - Plan: **Free** (Phase 1). Set env vars from the table above. `PUBLIC_BASE_URL` must equal the
   service's own `https://<name>.onrender.com` URL (you know the name before first deploy).
 - After deploy, hit `https://<name>.onrender.com/.well-known/oauth-authorization-server` —
