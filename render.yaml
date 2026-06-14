@@ -17,11 +17,12 @@ services:
     # the node-sdk type surface. --ignore-scripts skips the package's `prepare` (yarn build)
     # so we only install runtime deps and run the prebuilt output.
     buildCommand: yarn install --ignore-scripts
-    # $PORT is injected by Render; bind 0.0.0.0. App ID/secret/domain come from env vars below.
+    # $PORT is injected by Render; bind 0.0.0.0. APP_ID / APP_SECRET / LARK_DOMAIN are read
+    # automatically from env vars by the CLI (cli.ts merges OAPI_MCP_ENV_ARGS), so they are
+    # intentionally NOT passed as flags here — that keeps secrets off the command line and
+    # avoids an empty $VAR expanding into a stray positional arg.
     startCommand: >-
       node dist/cli.js mcp
-      -a $APP_ID -s $APP_SECRET
-      -d $LARK_DOMAIN
       -m streamable --host 0.0.0.0 -p $PORT
       --oauth --token-mode user_access_token
       --scope wiki:wiki,docx:document,bitable:app,drive:drive,offline_access
