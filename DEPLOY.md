@@ -64,6 +64,10 @@ Server endpoint: `POST <PUBLIC_BASE_URL>/mcp`. OAuth callback: `<PUBLIC_BASE_URL
   > we ship the prebuilt output and only install runtime deps. After changing any `src/` file,
   > run `yarn build` locally and commit the updated `dist/`. (On a paid plan with more build
   > RAM you can instead use `yarn install && yarn build` and gitignore `dist/`.)
+  >
+  > **Automated:** a committed pre-commit hook (`.githooks/pre-commit`) rebuilds and stages
+  > `dist/` automatically whenever a commit touches `src/`. After cloning, activate it once with:
+  > `git config core.hooksPath .githooks`. This prevents the deploy from ever running stale code.
 - Plan: **Free** (Phase 1). Set env vars from the table above. `PUBLIC_BASE_URL` must equal the
   service's own `https://<name>.onrender.com` URL (you know the name before first deploy).
 - After deploy, hit `https://<name>.onrender.com/.well-known/oauth-authorization-server` —

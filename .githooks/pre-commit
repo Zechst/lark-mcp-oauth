@@ -1,0 +1,13 @@
+#!/bin/sh
+# Keep the committed dist/ in sync with src/. Render runs the prebuilt dist/ (it doesn't
+# compile — the free builder OOMs on tsc), so if dist/ drifts from src/ the deploy runs
+# stale code. Whenever a commit touches src/ or build config, rebuild and stage dist/.
+if git diff --cached --name-only | grep -qE '^(src/|package\.json|tsconfig\.json|\.node-version)'; then
+  echo "[pre-commit] src changed — rebuilding dist/ …"
+  if ! yarn build >/dev/null 2>&1; then
+    echo "[pre-commit] ✗ yarn build failed — aborting commit."
+    exit 1
+  fi
+  git add dist
+  echo "[pre-commit] ✓ dist/ rebuilt and staged."
+fi
