@@ -17,16 +17,15 @@ services:
     # the node-sdk type surface. --ignore-scripts skips the package's `prepare` (yarn build)
     # so we only install runtime deps and run the prebuilt output.
     buildCommand: yarn install --ignore-scripts
-    # $PORT is injected by Render; bind 0.0.0.0. APP_ID / APP_SECRET / LARK_DOMAIN are read
-    # automatically from env vars by the CLI (cli.ts merges OAPI_MCP_ENV_ARGS), so they are
-    # intentionally NOT passed as flags here — that keeps secrets off the command line and
-    # avoids an empty $VAR expanding into a stray positional arg.
+    # STATIC start command — never needs editing. Everything tunable (creds, domain, tools,
+    # scope) is read from env vars by the CLI (cli.ts merges OAPI_MCP_ENV_ARGS): APP_ID,
+    # APP_SECRET, LARK_DOMAIN, LARK_TOOLS, LARK_OAUTH_SCOPE. $PORT is injected by Render; bind
+    # 0.0.0.0. To change which tools/scopes are exposed, edit the env vars below — no redeploy
+    # of the command, just save the env var (which triggers a normal restart).
     startCommand: >-
       node dist/cli.js mcp
       -m streamable --host 0.0.0.0 -p $PORT
       --oauth --token-mode user_access_token
-      --scope wiki:wiki,docx:document,bitable:app,drive:drive,offline_access
-      -t preset.doc.default,preset.base.default
     healthCheckPath: /health
     envVars:
       # The public HTTPS origin of THIS service. Must equal https://<name>.onrender.com
@@ -43,3 +42,11 @@ services:
         sync: false
       - key: LARK_DOMAIN
         value: https://open.larksuite.com
+      # Which tools to expose. Presets (preset.doc.default), whole projects (sheets, mail,
+      # calendar, im), or specific tool names — comma/space separated. Edit anytime.
+      - key: LARK_TOOLS
+        value: preset.doc.default,preset.base.default,calendar,im,sheets,mail
+      # OAuth scopes granted to the user_access_token. Must cover the tools above. Comma/space
+      # separated. Defaults to all app-granted permissions if left unset.
+      - key: LARK_OAUTH_SCOPE
+        value: docx:document,wiki:wiki,bitable:app,drive:drive,calendar:calendar,im:message,im:chat,sheets:spreadsheet,offline_access

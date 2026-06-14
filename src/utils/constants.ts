@@ -26,6 +26,9 @@ export const OAPI_MCP_ENV_ARGS = cleanEnvArgs({
   tokenMode: process.env.LARK_TOKEN_MODE,
   tools: process.env.LARK_TOOLS,
   domain: process.env.LARK_DOMAIN,
+  // OAuth scope for the user_access_token (space/comma separated). Lets you tune granted
+  // permissions from env (Render dashboard) instead of editing the start command.
+  scope: process.env.LARK_OAUTH_SCOPE,
 });
 
 export enum OAPI_MCP_ERROR_CODE {

@@ -28,7 +28,11 @@ exactly three changes (see `git log`):
 | `APP_ID` | yes | Lark app App ID (`cli_...`). |
 | `APP_SECRET` | yes | Lark app App Secret. |
 | `LARK_DOMAIN` | yes | `https://open.larksuite.com` (Lark international) or `https://open.feishu.cn` (Feishu China). |
+| `LARK_TOOLS` | no | Which tools to expose: presets (`preset.doc.default`), whole projects (`sheets`, `mail`, `calendar`, `im`), or tool names — comma/space separated. Equivalent to the `-t` flag; keeps the start command static. |
+| `LARK_OAUTH_SCOPE` | no | OAuth scopes for the user token (comma/space separated). Must cover `LARK_TOOLS`. Defaults to all app-granted permissions if unset. Equivalent to `--scope`. |
 | `LARK_MCP_STORAGE_DIR` | no | Override token storage dir; set to a mounted disk path (e.g. `/data`) for durable tokens. |
+
+Because `LARK_TOOLS` and `LARK_OAUTH_SCOPE` are env vars, the **start command stays static** — to change which tools/permissions are exposed, edit the env var in the Render dashboard (it restarts the service) instead of editing the command.
 
 Server endpoint: `POST <PUBLIC_BASE_URL>/mcp`. OAuth callback: `<PUBLIC_BASE_URL>/callback`.
 
