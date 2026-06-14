@@ -21,11 +21,26 @@ export class LarkAuthHandler {
   protected readonly options: LarkOAuthClientConfig;
   protected readonly provider: LarkOIDC2OAuthServerProvider | LarkOAuth2OAuthServerProvider;
 
+  // When deployed behind a public HTTPS host (e.g. Render), set PUBLIC_BASE_URL to the
+  // externally-reachable origin (https://<service>.onrender.com). The OAuth issuer/callback
+  // URLs must be the public HTTPS URL — upstream hardcodes localhost, which only works for
+  // a local stdio client. Falls back to host:port for local development.
+  protected get publicBaseUrl(): string | undefined {
+    const url = process.env.PUBLIC_BASE_URL?.trim();
+    return url ? url.replace(/\/+$/, '') : undefined;
+  }
+
   get callbackUrl() {
+    if (this.publicBaseUrl) {
+      return `${this.publicBaseUrl}/callback`;
+    }
     return `http://${this.options.host}:${this.options.port}/callback`;
   }
 
   get issuerUrl() {
+    if (this.publicBaseUrl) {
+      return this.publicBaseUrl;
+    }
     return `http://${this.options.host}:${this.options.port}`;
   }
 
@@ -143,7 +158,7 @@ export class LarkAuthHandler {
 
     authStore.storeCodeVerifier('reauthorize', codeVerifier);
 
-    const authorizeUrl = new URL(`http://${this.options.host}:${this.options.port}/authorize`);
+    const authorizeUrl = new URL(`${this.issuerUrl}/authorize`);
     authorizeUrl.searchParams.set('client_id', clientId);
     authorizeUrl.searchParams.set('response_type', 'code');
     authorizeUrl.searchParams.set('code_challenge', codeChallenge);

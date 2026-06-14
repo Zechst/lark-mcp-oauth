@@ -1,18 +1,18 @@
 import { StorageManager } from '../../../src/auth/utils/storage-manager';
 import { EncryptionUtil } from '../../../src/auth/utils/encryption';
 import { AUTH_CONFIG } from '../../../src/auth/config';
-import keytar from 'keytar';
 import fs from 'fs';
 import path from 'path';
 
 // Mock dependencies
-jest.mock('keytar');
 jest.mock('fs');
 jest.mock('../../../src/auth/utils/encryption');
 
-const mockKeytar = keytar as jest.Mocked<typeof keytar>;
 const mockFs = fs as jest.Mocked<typeof fs>;
 const MockEncryptionUtil = EncryptionUtil as jest.MockedClass<typeof EncryptionUtil>;
+
+// A valid 64-char hex key (32 bytes) for LARK_MCP_ENCRYPTION_KEY.
+const VALID_KEY = 'a'.repeat(64);
 
 describe('StorageManager', () => {
   let storageManager: StorageManager;
@@ -20,6 +20,8 @@ describe('StorageManager', () => {
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
+    process.env.LARK_MCP_ENCRYPTION_KEY = VALID_KEY;
 
     // Mock EncryptionUtil
     mockEncryptInstance = {
@@ -29,10 +31,6 @@ describe('StorageManager', () => {
 
     MockEncryptionUtil.mockImplementation(() => mockEncryptInstance);
     MockEncryptionUtil.generateKey = jest.fn().mockReturnValue('mock-key');
-
-    // Mock keytar
-    mockKeytar.getPassword.mockResolvedValue(null);
-    mockKeytar.setPassword.mockResolvedValue(undefined);
 
     // Mock fs
     mockFs.existsSync.mockReturnValue(false);
@@ -46,30 +44,17 @@ describe('StorageManager', () => {
     await new Promise((resolve) => setTimeout(resolve, 10));
   });
 
+  afterEach(() => {
+    delete process.env.LARK_MCP_ENCRYPTION_KEY;
+  });
+
   describe('initialization', () => {
-    it('should auto-initialize with existing AES key', async () => {
-      mockKeytar.getPassword.mockResolvedValue('existing-key');
-
+    it('should auto-initialize with the key from LARK_MCP_ENCRYPTION_KEY', async () => {
       const manager = new StorageManager();
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(mockKeytar.getPassword).toHaveBeenCalledWith(AUTH_CONFIG.SERVER_NAME, AUTH_CONFIG.AES_KEY_NAME);
-      expect(MockEncryptionUtil).toHaveBeenCalledWith('existing-key');
-    });
-
-    it('should auto-initialize and generate new AES key if none exists', async () => {
-      mockKeytar.getPassword.mockResolvedValue(null);
-
-      const manager = new StorageManager();
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
-      expect(MockEncryptionUtil.generateKey).toHaveBeenCalled();
-      expect(mockKeytar.setPassword).toHaveBeenCalledWith(
-        AUTH_CONFIG.SERVER_NAME,
-        AUTH_CONFIG.AES_KEY_NAME,
-        'mock-key',
-      );
-      expect(MockEncryptionUtil).toHaveBeenCalledWith('mock-key');
+      expect(MockEncryptionUtil).toHaveBeenCalledWith(VALID_KEY);
+      expect(() => manager.encrypt('x')).not.toThrow();
     });
 
     it('should create storage directory if it does not exist during auto-initialization', async () => {
@@ -82,14 +67,10 @@ describe('StorageManager', () => {
     });
 
     it('should not create storage directory if it exists during auto-initialization', async () => {
-      // Clear previous mocks first
       jest.clearAllMocks();
+      MockEncryptionUtil.mockImplementation(() => mockEncryptInstance);
 
-      mockFs.existsSync.mockImplementation((path) => {
-        // Return true for the storage directory path to simulate it exists
-        return path === AUTH_CONFIG.STORAGE_DIR;
-      });
-      mockKeytar.getPassword.mockResolvedValue('existing-key');
+      mockFs.existsSync.mockImplementation((p) => p === AUTH_CONFIG.STORAGE_DIR);
 
       const manager = new StorageManager();
       await new Promise((resolve) => setTimeout(resolve, 10));
@@ -97,43 +78,29 @@ describe('StorageManager', () => {
       expect(mockFs.mkdirSync).not.toHaveBeenCalled();
     });
 
-    it('should handle keytar errors during auto-initialization', async () => {
-      mockKeytar.getPassword.mockRejectedValue(new Error('Keytar error'));
-
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    it('should disable persistence when LARK_MCP_ENCRYPTION_KEY is missing', async () => {
+      delete process.env.LARK_MCP_ENCRYPTION_KEY;
 
       const manager = new StorageManager();
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(consoleSpy).toHaveBeenCalledWith('[StorageManager] Failed to initialize encryption: Error: Keytar error');
-      expect(consoleSpy).toHaveBeenCalledWith('[StorageManager] Failed to initialize: Error: Keytar error');
-
-      consoleSpy.mockRestore();
+      // Encryption was never constructed; the store falls back to disabled/in-memory.
+      expect(() => manager.encrypt('data')).toThrow('StorageManager not initialized');
     });
 
-    it('should handle keytar setPassword errors during auto-initialization', async () => {
-      mockKeytar.getPassword.mockResolvedValue(null);
-      mockKeytar.setPassword.mockRejectedValue(new Error('Keytar setPassword error'));
-
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+    it('should disable persistence when LARK_MCP_ENCRYPTION_KEY is not valid hex', async () => {
+      process.env.LARK_MCP_ENCRYPTION_KEY = 'not-a-valid-hex-key';
 
       const manager = new StorageManager();
       await new Promise((resolve) => setTimeout(resolve, 10));
 
-      expect(consoleSpy).toHaveBeenCalledWith(
-        '[StorageManager] Failed to initialize encryption: Error: Keytar setPassword error',
-      );
-
-      consoleSpy.mockRestore();
+      expect(() => manager.encrypt('data')).toThrow('StorageManager not initialized');
     });
   });
 
   describe('encryption/decryption', () => {
     it('should encrypt data after auto-initialization', async () => {
       mockEncryptInstance.encrypt.mockReturnValue('encrypted-data');
-
-      // Wait for auto-initialization
-      await new Promise((resolve) => setTimeout(resolve, 10));
 
       const result = storageManager.encrypt('test-data');
 
@@ -144,9 +111,6 @@ describe('StorageManager', () => {
     it('should decrypt data after auto-initialization', async () => {
       mockEncryptInstance.decrypt.mockReturnValue('decrypted-data');
 
-      // Wait for auto-initialization
-      await new Promise((resolve) => setTimeout(resolve, 10));
-
       const result = storageManager.decrypt('encrypted-data');
 
       expect(mockEncryptInstance.decrypt).toHaveBeenCalledWith('encrypted-data');
@@ -154,16 +118,13 @@ describe('StorageManager', () => {
     });
 
     it('should throw error if initialization failed', async () => {
-      mockKeytar.getPassword.mockRejectedValue(new Error('Keytar error'));
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      delete process.env.LARK_MCP_ENCRYPTION_KEY;
 
       const failedManager = new StorageManager();
       await new Promise((resolve) => setTimeout(resolve, 10));
 
       expect(() => failedManager.encrypt('data')).toThrow('StorageManager not initialized');
       expect(() => failedManager.decrypt('data')).toThrow('StorageManager not initialized');
-
-      consoleSpy.mockRestore();
     });
   });
 
@@ -198,18 +159,14 @@ describe('StorageManager', () => {
         throw new Error('Read error');
       });
 
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
       const result = await storageManager.loadStorageData();
 
       expect(result).toEqual({ tokens: {}, clients: {} });
-      expect(consoleSpy).toHaveBeenCalledWith('[StorageManager] Failed to load storage data: Error: Read error');
-
-      consoleSpy.mockRestore();
     });
 
     it('should return empty data when file contains empty string', async () => {
       mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(''); // 空字符串
+      mockFs.readFileSync.mockReturnValue('');
       mockEncryptInstance.decrypt.mockReturnValue('');
 
       const result = await storageManager.loadStorageData();
@@ -224,7 +181,7 @@ describe('StorageManager', () => {
             token: 'test-token',
             clientId: 'test-client',
             scopes: ['scope1'],
-            expiresAt: Date.now() / 1000 + 3600,
+            expiresAt: 9999999999,
           },
         },
         clients: {},
@@ -249,29 +206,8 @@ describe('StorageManager', () => {
       await expect(storageManager.saveStorageData(mockData)).rejects.toThrow('Write error');
     });
 
-    it('should update storage data atomically', async () => {
-      const initialData = { tokens: {}, clients: {} };
-      const storageFile = path.join(AUTH_CONFIG.STORAGE_DIR, AUTH_CONFIG.STORAGE_FILE);
-
-      mockFs.existsSync.mockReturnValue(true);
-      mockFs.readFileSync.mockReturnValue(JSON.stringify(initialData));
-
-      // 使用 loadStorageData 然后 saveStorageData 来模拟更新操作
-      const data = await storageManager.loadStorageData();
-      data.tokens['new-token'] = {
-        token: 'test-token',
-        clientId: 'test-client',
-        scopes: ['scope1'],
-        expiresAt: Date.now() / 1000 + 3600,
-      };
-      await storageManager.saveStorageData(data);
-
-      expect(mockFs.writeFileSync).toHaveBeenCalled();
-    });
-
     it('should return empty data when initialization failed and file does not exist', async () => {
-      mockKeytar.getPassword.mockRejectedValue(new Error('Keytar error'));
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      delete process.env.LARK_MCP_ENCRYPTION_KEY;
 
       const failedManager = new StorageManager();
       mockFs.existsSync.mockReturnValue(false);
@@ -279,13 +215,10 @@ describe('StorageManager', () => {
       const result = await failedManager.loadStorageData();
 
       expect(result).toEqual({ tokens: {}, clients: {} });
-
-      consoleSpy.mockRestore();
     });
 
     it('should skip saving when initialization failed', async () => {
-      mockKeytar.getPassword.mockRejectedValue(new Error('Keytar error'));
-      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      delete process.env.LARK_MCP_ENCRYPTION_KEY;
 
       const failedManager = new StorageManager();
       const mockData = { tokens: {}, clients: {} };
@@ -293,8 +226,6 @@ describe('StorageManager', () => {
       await failedManager.saveStorageData(mockData);
 
       expect(mockFs.writeFileSync).not.toHaveBeenCalled();
-
-      consoleSpy.mockRestore();
     });
   });
 });

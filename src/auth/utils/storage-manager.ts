@@ -43,18 +43,21 @@ export class StorageManager {
   }
 
   private async initializeEncryption(): Promise<void> {
-    try {
-      const keytar = await import('keytar');
-      let key = await keytar.getPassword(AUTH_CONFIG.SERVER_NAME, AUTH_CONFIG.AES_KEY_NAME);
-      if (!key) {
-        key = EncryptionUtil.generateKey();
-        await keytar.setPassword(AUTH_CONFIG.SERVER_NAME, AUTH_CONFIG.AES_KEY_NAME, key);
-      }
-      this.encryptionUtil = new EncryptionUtil(key);
-    } catch (error) {
-      logger.warn(`[StorageManager] Failed to initialize encryption: ${error}`);
-      throw error;
+    // Upstream stored the AES key in the OS keychain via `keytar`, which requires native
+    // libsecret bindings and silently fails in a headless container. For remote/container
+    // deployment we read a stable 32-byte (64 hex char) key from LARK_MCP_ENCRYPTION_KEY so
+    // the encrypted token store survives across restarts on a persistent volume.
+    // If unset, persistence is disabled and the server falls back to an in-memory store.
+    const envKey = process.env.LARK_MCP_ENCRYPTION_KEY?.trim();
+    if (!envKey) {
+      throw new Error(
+        'LARK_MCP_ENCRYPTION_KEY not set — persistent token store disabled, using in-memory store',
+      );
     }
+    if (!/^[0-9a-f]{64}$/i.test(envKey)) {
+      throw new Error('LARK_MCP_ENCRYPTION_KEY must be a 64-character hex string (32 bytes)');
+    }
+    this.encryptionUtil = new EncryptionUtil(envKey.toLowerCase());
   }
 
   private ensureStorageDir(): void {
