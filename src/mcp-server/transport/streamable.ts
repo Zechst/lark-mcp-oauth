@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from 'express';
 import { StreamableHTTPServerTransport } from '@modelcontextprotocol/sdk/server/streamableHttp.js';
 import { InitTransportServerFunction } from '../shared';
-import { parseMCPServerOptionsFromRequest, sendJsonRpcError } from './utils';
+import { parseMCPServerOptionsFromRequest, sendJsonRpcError, getTrustProxySetting } from './utils';
 import { LarkAuthHandler } from '../../auth';
 import { logger } from '../../utils/logger';
 
@@ -17,6 +17,9 @@ export const initStreamableServer: InitTransportServerFunction = (
   }
 
   const app = express();
+  // Trust the reverse proxy (Render etc.) so express-rate-limit in the OAuth
+  // router can derive the real client IP from X-Forwarded-For. See getTrustProxySetting.
+  app.set('trust proxy', getTrustProxySetting());
   app.use(express.json());
 
   // Unauthenticated health check for uptime monitors (UptimeRobot) and Render health checks.

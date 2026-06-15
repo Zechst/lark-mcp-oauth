@@ -2,7 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { InitTransportServerFunction } from '../shared';
 import { LarkAuthHandler } from '../../auth';
-import { parseMCPServerOptionsFromRequest } from './utils';
+import { parseMCPServerOptionsFromRequest, getTrustProxySetting } from './utils';
 import { logger } from '../../utils/logger';
 
 export const initSSEServer: InitTransportServerFunction = (
@@ -17,6 +17,9 @@ export const initSSEServer: InitTransportServerFunction = (
   }
 
   const app = express();
+  // Trust the reverse proxy (Render etc.) so express-rate-limit in the OAuth
+  // router can derive the real client IP from X-Forwarded-For. See getTrustProxySetting.
+  app.set('trust proxy', getTrustProxySetting());
   const transports: Map<string, SSEServerTransport> = new Map();
 
   let authHandler: LarkAuthHandler | undefined;

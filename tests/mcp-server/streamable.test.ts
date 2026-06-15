@@ -7,6 +7,7 @@ import { LarkAuthHandler } from '../../src/auth';
 // 模拟依赖
 jest.mock('express', () => {
   const mockApp = {
+    set: jest.fn(),
     use: jest.fn(),
     post: jest.fn(),
     get: jest.fn(),
@@ -56,6 +57,7 @@ jest.mock('../../src/mcp-server/transport/utils', () => ({
     success: true,
   }),
   sendJsonRpcError: jest.fn(),
+  getTrustProxySetting: jest.fn().mockReturnValue(1),
 }));
 
 jest.mock('../../src/auth', () => ({
@@ -155,6 +157,24 @@ describe('initStreamableServer', () => {
     expect(mockApp.get).toHaveBeenCalledWith('/mcp', expect.any(Function));
     expect(mockApp.delete).toHaveBeenCalledWith('/mcp', expect.any(Function));
     expect(mockApp.listen).toHaveBeenCalledWith(options.port, options.host, expect.any(Function));
+  });
+
+  it('应该设置 trust proxy 以支持反向代理后的 express-rate-limit', () => {
+    const options: McpServerOptions = {
+      appId: 'test-app-id',
+      appSecret: 'test-app-secret',
+      host: 'localhost',
+      port: 3000,
+    };
+
+    const { McpServer } = require('@modelcontextprotocol/sdk/server/mcp.js');
+    const getMockServer = jest.fn().mockReturnValue(new McpServer());
+
+    initStreamableServer(getMockServer, options);
+
+    // Regression: without app.set('trust proxy', ...) express-rate-limit in the
+    // OAuth router throws ERR_ERL_UNEXPECTED_X_FORWARDED_FOR behind Render's proxy.
+    expect(mockApp.set).toHaveBeenCalledWith('trust proxy', 1);
   });
 
   it('应该处理POST /mcp请求', async () => {
