@@ -22,10 +22,17 @@ services:
     # APP_SECRET, LARK_DOMAIN, LARK_TOOLS, LARK_OAUTH_SCOPE. $PORT is injected by Render; bind
     # 0.0.0.0. To change which tools/scopes are exposed, edit the env vars below — no redeploy
     # of the command, just save the env var (which triggers a normal restart).
+    # token-mode is omitted so it defaults to "auto": tenant_access_token (app
+    # credentials, never expires) is used unless a tool explicitly requests the
+    # user token. This avoids forcing the ~2h user_access_token onto every call
+    # (which caused constant re-auth and broke tenant-only endpoints). To force a
+    # mode, set the LARK_TOKEN_MODE env var (auto | tenant_access_token |
+    # user_access_token) — do NOT re-add a --token-mode flag, as the CLI flag
+    # overrides the env var.
     startCommand: >-
       node dist/cli.js mcp
       -m streamable --host 0.0.0.0 -p $PORT
-      --oauth --token-mode user_access_token
+      --oauth
     healthCheckPath: /health
     envVars:
       # The public HTTPS origin of THIS service. Must equal https://<name>.onrender.com
