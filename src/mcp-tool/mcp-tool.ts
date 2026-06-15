@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { LarkMcpToolOptions, McpTool, SettableValue, ToolNameCase, TokenMode } from './types';
 import { AllTools, AllToolsZh } from './tools';
 import { defaultToolNames } from './constants';
-import { filterTools, larkOapiHandler, caseTransf, getShouldUseUAT } from './utils';
+import { filterTools, larkOapiHandler, caseTransf, getShouldUseUAT, applyUserAccessOverrides } from './utils';
 import { LarkAuthHandler, isTokenValid } from '../auth';
 import { safeJsonParse } from '../utils/safe-json-parse';
 import { OAPI_MCP_ERROR_CODE } from '../utils/constants';
@@ -50,7 +50,8 @@ export class LarkMcpTool {
       ...options.toolsOptions,
     };
 
-    this.allTools = filterTools(isZH ? AllToolsZh : AllTools, filterOptions);
+    const baseTools = applyUserAccessOverrides(isZH ? AllToolsZh : AllTools, isZH);
+    this.allTools = filterTools(baseTools, filterOptions);
 
     logger.info(`[LarkMcpTool] Initialized with ${this.allTools.length} tools, tokenMode: ${this.options.tokenMode}`);
   }
