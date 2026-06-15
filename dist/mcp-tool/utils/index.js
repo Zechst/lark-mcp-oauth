@@ -18,3 +18,4 @@ __exportStar(require("./filter-tools"), exports);
 __exportStar(require("./handler"), exports);
 __exportStar(require("./case-transf"), exports);
 __exportStar(require("./get-should-use-uat"), exports);
+__exportStar(require("./apply-user-access-overrides"), exports);
