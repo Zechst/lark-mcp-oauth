@@ -4,8 +4,9 @@
  * applyUserAccessOverrides() before tool filtering. This is a sync-proof
  * override layer: the auto-generated gen-tools are never edited.
  *
- * Approval is the first consumer. Each entry below was confirmed to support
- * user_access_token in the Lark OpenAPI docs.
+ * Approval is the first consumer. Each entry below is intended to be used with
+ * user_access_token; see the UNVERIFIED note at the bottom of this file for the
+ * verification status of individual endpoints.
  *
  *   AllTools ─▶ applyUserAccessOverrides ─▶ filterTools ─▶ registered tools
  *                 (+'user', +useUAT)         (user mode keeps user-capable)
