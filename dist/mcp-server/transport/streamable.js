@@ -15,6 +15,9 @@ const initStreamableServer = (getNewServer, options, { needAuthFlow } = { needAu
         throw new Error('[Lark MCP] Port and host are required');
     }
     const app = (0, express_1.default)();
+    // Trust the reverse proxy (Render etc.) so express-rate-limit in the OAuth
+    // router can derive the real client IP from X-Forwarded-For. See getTrustProxySetting.
+    app.set('trust proxy', (0, utils_1.getTrustProxySetting)());
     app.use(express_1.default.json());
     // Unauthenticated health check for uptime monitors (UptimeRobot) and Render health checks.
     app.get('/health', (_req, res) => {

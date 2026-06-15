@@ -4,6 +4,7 @@ import {
   parseMCPServerOptionsFromRequest,
   sendJsonRpcError,
   sendResponseError,
+  getTrustProxySetting,
 } from '../../../src/mcp-server/transport/utils';
 
 // Mock console.error to avoid console output during tests
@@ -136,6 +137,32 @@ describe('mcp-server/transport/utils', () => {
       expect(mockConsoleError).toHaveBeenCalledWith(error);
       expect(mockRes.status).toHaveBeenCalledWith(500);
       expect(mockRes.send).toHaveBeenCalledWith('Response error');
+    });
+  });
+
+  describe('getTrustProxySetting', () => {
+    const original = process.env.TRUST_PROXY;
+    afterEach(() => {
+      if (original === undefined) {
+        delete process.env.TRUST_PROXY;
+      } else {
+        process.env.TRUST_PROXY = original;
+      }
+    });
+
+    it('defaults to 1 (single proxy hop) when TRUST_PROXY is unset', () => {
+      delete process.env.TRUST_PROXY;
+      expect(getTrustProxySetting()).toBe(1);
+    });
+
+    it('parses a numeric TRUST_PROXY into a hop count', () => {
+      process.env.TRUST_PROXY = '2';
+      expect(getTrustProxySetting()).toBe(2);
+    });
+
+    it('passes a non-numeric TRUST_PROXY through as a string', () => {
+      process.env.TRUST_PROXY = 'loopback';
+      expect(getTrustProxySetting()).toBe('loopback');
     });
   });
 });

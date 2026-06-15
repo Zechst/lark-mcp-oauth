@@ -37,6 +37,7 @@ const createMockResponse = () => ({
 
 jest.mock('express', () => {
   const mockApp = {
+    set: jest.fn(),
     use: jest.fn(),
     get: jest.fn(),
     post: jest.fn(),
@@ -149,6 +150,8 @@ describe('initSSEServer', () => {
     expect(mockApp.get).toHaveBeenCalledWith('/sse', expect.any(Function), expect.any(Function));
     expect(mockApp.post).toHaveBeenCalledWith('/messages', expect.any(Function), expect.any(Function));
     expect(mockApp.listen).toHaveBeenCalledWith(options.port, options.host, expect.any(Function));
+    // Regression: trust proxy must be set so express-rate-limit works behind a proxy.
+    expect(mockApp.set).toHaveBeenCalledWith('trust proxy', 1);
   });
 
   it('应该处理SSE路由请求', async () => {
