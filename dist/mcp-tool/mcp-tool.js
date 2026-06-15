@@ -40,8 +40,7 @@ class LarkMcpTool {
             tokenMode: this.options.tokenMode || types_1.TokenMode.AUTO,
             ...options.toolsOptions,
         };
-        const baseTools = (0, utils_1.applyUserAccessOverrides)(isZH ? tools_1.AllToolsZh : tools_1.AllTools, isZH);
-        this.allTools = (0, utils_1.filterTools)(baseTools, filterOptions);
+        this.allTools = (0, utils_1.filterTools)(isZH ? tools_1.AllToolsZh : tools_1.AllTools, filterOptions);
         logger_1.logger.info(`[LarkMcpTool] Initialized with ${this.allTools.length} tools, tokenMode: ${this.options.tokenMode}`);
     }
     /**
@@ -161,7 +160,7 @@ class LarkMcpTool {
                         };
                     }
                     const handler = tool.customHandler || utils_1.larkOapiHandler;
-                    const shouldUseUAT = (0, utils_1.getShouldUseUAT)(this.options.tokenMode, (_a = params === null || params === void 0 ? void 0 : params.useUAT) !== null && _a !== void 0 ? _a : false);
+                    const shouldUseUAT = (0, utils_1.resolveShouldUseUAT)(tool.accessTokens, this.options.tokenMode, (_a = params === null || params === void 0 ? void 0 : params.useUAT) !== null && _a !== void 0 ? _a : false);
                     if (shouldUseUAT) {
                         const { userAccessToken, authorizeUrl } = await this.ensureGetUserAccessToken();
                         if (!userAccessToken) {

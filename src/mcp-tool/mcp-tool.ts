@@ -3,7 +3,7 @@ import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js';
 import { LarkMcpToolOptions, McpTool, SettableValue, ToolNameCase, TokenMode } from './types';
 import { AllTools, AllToolsZh } from './tools';
 import { defaultToolNames } from './constants';
-import { filterTools, larkOapiHandler, caseTransf, getShouldUseUAT, applyUserAccessOverrides } from './utils';
+import { filterTools, larkOapiHandler, caseTransf, resolveShouldUseUAT } from './utils';
 import { LarkAuthHandler, isTokenValid } from '../auth';
 import { safeJsonParse } from '../utils/safe-json-parse';
 import { OAPI_MCP_ERROR_CODE } from '../utils/constants';
@@ -50,8 +50,7 @@ export class LarkMcpTool {
       ...options.toolsOptions,
     };
 
-    const baseTools = applyUserAccessOverrides(isZH ? AllToolsZh : AllTools, isZH);
-    this.allTools = filterTools(baseTools, filterOptions);
+    this.allTools = filterTools(isZH ? AllToolsZh : AllTools, filterOptions);
 
     logger.info(`[LarkMcpTool] Initialized with ${this.allTools.length} tools, tokenMode: ${this.options.tokenMode}`);
   }
@@ -184,7 +183,7 @@ export class LarkMcpTool {
           }
           const handler = tool.customHandler || larkOapiHandler;
 
-          const shouldUseUAT = getShouldUseUAT(this.options.tokenMode, params?.useUAT ?? false);
+          const shouldUseUAT = resolveShouldUseUAT(tool.accessTokens, this.options.tokenMode, params?.useUAT ?? false);
 
           if (shouldUseUAT) {
             const { userAccessToken, authorizeUrl } = await this.ensureGetUserAccessToken();
