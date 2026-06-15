@@ -4,7 +4,8 @@
  * applyUserAccessOverrides() before tool filtering. This is a sync-proof
  * override layer: the auto-generated gen-tools are never edited.
  *
- * Approval is the first consumer. Each entry below is intended to be used with
+ * Consumers so far: approval (act on / submit / view approvals) and im (read
+ * chat message history). Each entry below is intended to be used with
  * user_access_token; see the UNVERIFIED note at the bottom of this file for the
  * verification status of individual endpoints.
  *

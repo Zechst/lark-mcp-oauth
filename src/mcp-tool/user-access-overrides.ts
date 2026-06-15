@@ -4,7 +4,8 @@
  * applyUserAccessOverrides() before tool filtering. This is a sync-proof
  * override layer: the auto-generated gen-tools are never edited.
  *
- * Approval is the first consumer. Each entry below is intended to be used with
+ * Consumers so far: approval (act on / submit / view approvals) and im (read
+ * chat message history). Each entry below is intended to be used with
  * user_access_token; see the UNVERIFIED note at the bottom of this file for the
  * verification status of individual endpoints.
  *
@@ -36,6 +37,11 @@ export const userAccessOverrides: Record<string, string[]> = {
     'approval.v4.instanceComment.delete',
     'approval.v4.instanceComment.list',
     'approval.v4.instanceComment.remove',
+  ],
+  im: [
+    // read chat message history as the logged-in user (tenant-only in gen-tools)
+    'im.v1.message.list', // list messages in a chat
+    'im.v1.message.get', // get a single message by id
   ],
 };
 
@@ -80,3 +86,5 @@ export const userAccessOverrideNames: Set<string> = new Set<string>(
 //   - approval.v4.instanceComment.delete
 //   - approval.v4.instanceComment.list
 //   - approval.v4.instanceComment.remove
+//   - im.v1.message.list   (gen-tools mark tenant-only; Lark docs support user token for chats the user is in)
+//   - im.v1.message.get

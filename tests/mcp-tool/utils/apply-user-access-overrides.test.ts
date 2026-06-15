@@ -26,6 +26,20 @@ describe('applyUserAccessOverrides', () => {
     expect(out[0].schema.useUAT.description).toBe('使用用户身份请求, 否则使用应用身份');
   });
 
+  it("adds 'user' and injects useUAT for a listed im message-read tool", () => {
+    const out = applyUserAccessOverrides([make('im.v1.message.list')], false);
+    expect(out[0].accessTokens).toEqual(['tenant', 'user']);
+    expect(out[0].schema.useUAT).toBeDefined();
+  });
+
+  it('leaves an excluded im write tool unchanged', () => {
+    const tool = make('im.v1.message.create');
+    const out = applyUserAccessOverrides([tool], false);
+    expect(out[0]).toBe(tool);
+    expect(out[0].accessTokens).toEqual(['tenant']);
+    expect(out[0].schema.useUAT).toBeUndefined();
+  });
+
   it('leaves an excluded approval tool unchanged', () => {
     const tool = make('approval.v4.approval.create');
     const out = applyUserAccessOverrides([tool], false);
