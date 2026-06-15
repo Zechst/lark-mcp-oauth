@@ -40,7 +40,8 @@ class LarkMcpTool {
             tokenMode: this.options.tokenMode || types_1.TokenMode.AUTO,
             ...options.toolsOptions,
         };
-        this.allTools = (0, utils_1.filterTools)(isZH ? tools_1.AllToolsZh : tools_1.AllTools, filterOptions);
+        const baseTools = (0, utils_1.applyUserAccessOverrides)(isZH ? tools_1.AllToolsZh : tools_1.AllTools, isZH);
+        this.allTools = (0, utils_1.filterTools)(baseTools, filterOptions);
         logger_1.logger.info(`[LarkMcpTool] Initialized with ${this.allTools.length} tools, tokenMode: ${this.options.tokenMode}`);
     }
     /**
