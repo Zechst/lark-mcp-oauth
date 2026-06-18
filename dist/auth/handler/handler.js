@@ -49,6 +49,7 @@ class LarkAuthHandler {
             appId,
             appSecret,
             callbackUrl: this.callbackUrl,
+            scope: this.options.scope,
         };
         if (!((_a = this.options.scope) === null || _a === void 0 ? void 0 : _a.length)) {
             this.provider = new provider_1.LarkOIDC2OAuthServerProvider(params);
