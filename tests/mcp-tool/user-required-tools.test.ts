@@ -12,6 +12,18 @@ describe('userRequiredToolNames', () => {
     expect(userRequiredToolNames.has('mail.v1.userMailboxMessage.get')).toBe(true);
   });
 
+  it('lists the DM / chat read tools', () => {
+    expect(userRequiredToolNames.has('im.v1.message.list')).toBe(true);
+    expect(userRequiredToolNames.has('im.v1.chat.list')).toBe(true);
+  });
+
+  it('forces UAT for a DM read even though message.list is gen-marked tenant-only', () => {
+    // Baseline: tenant-only tool would resolve to tenant (false).
+    expect(resolveShouldUseUAT(['tenant'], TokenMode.AUTO, false)).toBe(false);
+    // The user-required override flips it to the user token so it can read your DMs.
+    expect(decide('im.v1.message.list', ['tenant'])).toBe(true);
+  });
+
   it('forces UAT for a personal-mailbox read even though accessTokens allows tenant and auto defaults to tenant', () => {
     // Baseline: a dual-capable tool in auto mode with useUAT=false resolves to tenant.
     expect(resolveShouldUseUAT(['tenant', 'user'], TokenMode.AUTO, false)).toBe(false);
