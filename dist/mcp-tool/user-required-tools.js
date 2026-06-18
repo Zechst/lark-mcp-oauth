@@ -24,4 +24,13 @@ exports.userRequiredToolNames = new Set([
     'mail.v1.userMailboxMessage.get',
     'mail.v1.userMailboxMessage.getByCard',
     'mail.v1.userMailboxMessageAttachment.downloadUrl',
+    // Direct messages / chats — a DM is a private chat the app is not a member of,
+    // so the tenant token cannot see it; these must run as the logged-in user.
+    // (message.list/get are gen-marked tenant-only but Lark accepts the user token
+    // for chats the user belongs to; chat.list/search default to tenant in auto and
+    // would otherwise list the app's chats instead of yours.)
+    'im.v1.chat.list',
+    'im.v1.chat.search',
+    'im.v1.message.list',
+    'im.v1.message.get',
 ]);
