@@ -63,6 +63,7 @@ export class LarkAuthHandler {
       appId,
       appSecret,
       callbackUrl: this.callbackUrl,
+      scope: this.options.scope,
     };
 
     if (!this.options.scope?.length) {

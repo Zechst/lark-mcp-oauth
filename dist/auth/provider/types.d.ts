@@ -5,4 +5,5 @@ export interface LarkProxyOAuthServerProviderOptions {
     appId: string;
     appSecret: string;
     callbackUrl: string;
+    scope?: string[];
 }

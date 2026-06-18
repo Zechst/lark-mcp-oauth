@@ -49,8 +49,12 @@ export class LarkOAuth2OAuthServerProvider implements OAuthServerProvider {
     if (params.state) {
       searchParams.set('state', params.state);
     }
-    if (params.scopes?.length) {
-      searchParams.set('scope', params.scopes.join(' '));
+    // Fall back to the configured LARK_OAUTH_SCOPE when the client (e.g. the MCP
+    // connector) requests no scope, so the issued user_access_token carries the
+    // full granted scopes instead of only Lark's default identity scope.
+    const scopes = params.scopes?.length ? params.scopes : this._options.scope;
+    if (scopes?.length) {
+      searchParams.set('scope', scopes.join(' '));
     }
     targetUrl.search = searchParams.toString();
     logger.info(
