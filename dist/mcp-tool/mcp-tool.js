@@ -6,6 +6,7 @@ const types_1 = require("./types");
 const tools_1 = require("./tools");
 const constants_1 = require("./constants");
 const utils_1 = require("./utils");
+const user_required_tools_1 = require("./user-required-tools");
 const auth_1 = require("../auth");
 const safe_json_parse_1 = require("../utils/safe-json-parse");
 const constants_2 = require("../utils/constants");
@@ -160,7 +161,8 @@ class LarkMcpTool {
                         };
                     }
                     const handler = tool.customHandler || utils_1.larkOapiHandler;
-                    const shouldUseUAT = (0, utils_1.resolveShouldUseUAT)(tool.accessTokens, this.options.tokenMode, (_a = params === null || params === void 0 ? void 0 : params.useUAT) !== null && _a !== void 0 ? _a : false);
+                    const shouldUseUAT = user_required_tools_1.userRequiredToolNames.has(tool.name) ||
+                        (0, utils_1.resolveShouldUseUAT)(tool.accessTokens, this.options.tokenMode, (_a = params === null || params === void 0 ? void 0 : params.useUAT) !== null && _a !== void 0 ? _a : false);
                     if (shouldUseUAT) {
                         const { userAccessToken, authorizeUrl } = await this.ensureGetUserAccessToken();
                         if (!userAccessToken) {
