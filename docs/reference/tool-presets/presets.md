@@ -145,6 +145,8 @@ These presets grant **mutating** access (edit/delete) on top of the read-oriente
 | sheets.v3.spreadsheet.get / patch | Read / rename a spreadsheet | | | | ✓ |
 | sheets.v3.spreadsheetSheet.get / query | Read sheet metadata | | | | ✓ |
 | sheets.v3.spreadsheetSheet.find / replace | Find / replace in a sheet | | | | ✓ |
+| sheets.builtin.setValues | Overwrite one or more cell ranges with values | | | | ✓ |
+| sheets.builtin.appendValues | Append rows of values after the last used row | | | | ✓ |
 
 ### preset.doc.write
 Document and wiki **write** access: create documents, edit/append/delete document blocks, and create/rename/move wiki nodes. Lark documents are block-based, so editing content means patching blocks — there is no single "update document" call. There is no generated tool for deleting a wiki node.
@@ -156,7 +158,7 @@ Full Base (Bitable) control: everything in `preset.base.default` plus update and
 Drive file management: delete and move files and folders, and manage sharing permissions. `drive.v1.file.delete` is the single endpoint that deletes a doc, sheet, Base, or any other file (pass the file token and its type).
 
 ### preset.sheets.default
-Spreadsheet tools: read, create, rename, and find/replace within sheets. Bulk cell-value writing is a Sheets v2 API that is not in the generated tool set yet.
+Spreadsheet tools: read, create, rename, and find/replace within sheets, plus cell-value writing via the `sheets.builtin.*` tools — `setValues` (overwrite one or more ranges) and `appendValues` (add rows after the last used row). These two wrap the Sheets v2 values API, which is not part of the generated v3 tool set. Ranges use `<sheetId>!<A1>` notation; get the `sheetId` from `sheets.v3.spreadsheetSheet.query`.
 
 ## Related Documentation
 

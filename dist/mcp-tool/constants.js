@@ -156,7 +156,8 @@ exports.presetDriveToolNames = [
     'drive.v1.permissionMember.delete',
 ];
 // Spreadsheet tools. The generated v3 surface covers metadata (rename), structure (move
-// dimension) and find/replace; bulk cell-value writing is a v2 API not in the generated set.
+// dimension) and find/replace; cell-value writing is a v2 API exposed via the sheets.builtin.*
+// tools (setValues overwrites ranges, appendValues adds rows).
 exports.presetSheetsToolNames = [
     'sheets.v3.spreadsheet.create',
     'sheets.v3.spreadsheet.get',
@@ -165,6 +166,8 @@ exports.presetSheetsToolNames = [
     'sheets.v3.spreadsheetSheet.query',
     'sheets.v3.spreadsheetSheet.find',
     'sheets.v3.spreadsheetSheet.replace',
+    'sheets.builtin.setValues',
+    'sheets.builtin.appendValues',
 ];
 exports.defaultToolNames = [
     ...exports.presetImToolNames,
