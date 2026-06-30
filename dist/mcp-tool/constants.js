@@ -117,7 +117,14 @@ exports.presetCalendarToolNames = [
 // patching/appending/deleting blocks; there is no single "update document" call. Doc/sheet/base
 // FILE deletion is not here — files are deleted via drive.v1.file.delete (see presetDriveToolNames).
 // Wiki node deletion has no generated tool, so it is intentionally absent.
+//
+// The block READERS (documentBlock.list / .get, documentBlockChildren.get) are included so a
+// safe rewrite-in-place is possible: list the existing blocks to get their real ids and count,
+// then batchDelete by that actual count instead of guessing an index on a live document.
 exports.presetDocWriteToolNames = [
+    'docx.v1.documentBlock.list',
+    'docx.v1.documentBlock.get',
+    'docx.v1.documentBlockChildren.get',
     'docx.v1.document.create',
     'docx.v1.documentBlock.patch',
     'docx.v1.documentBlock.batchUpdate',
