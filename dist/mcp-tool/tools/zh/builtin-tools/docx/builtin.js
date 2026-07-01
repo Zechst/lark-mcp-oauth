@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.docxBuiltinTools = exports.larkDocxBuiltinImportTool = exports.larkDocxBuiltinSearchTool = void 0;
+exports.docxBuiltinTools = exports.larkDocxBuiltinSetImageTool = exports.larkDocxBuiltinImportTool = exports.larkDocxBuiltinSearchTool = void 0;
 const lark = __importStar(require("@larksuiteoapi/node-sdk"));
 const stream_1 = require("stream");
 const zod_1 = require("zod");
@@ -195,4 +195,68 @@ exports.larkDocxBuiltinImportTool = {
         }
     },
 };
-exports.docxBuiltinTools = [exports.larkDocxBuiltinSearchTool, exports.larkDocxBuiltinImportTool];
+// 向文档插入图片分两步：(1) 通过 docx.v1.documentBlockChildren.create 创建空图片块（block_type 27），
+// 返回图片块的 block_id；(2) 用本工具把图片字节上传到该块。文档块 API 只能创建空占位，图片内容需通过
+// 素材上传（parent_type 'docx_image'）填充。
+exports.larkDocxBuiltinSetImageTool = {
+    project: 'docx',
+    name: 'docx.builtin.setImage',
+    accessTokens: ['user', 'tenant'],
+    description: '[飞书/Lark] - 云文档-文档 - 设置图片 - 向已有的图片块上传图片。先用 docx.v1.documentBlockChildren.create ' +
+        '创建空图片块（block_type 27）获取 block_id，再用本工具传入 base64 编码的图片内容进行填充。',
+    schema: {
+        data: zod_1.z.object({
+            block_id: zod_1.z.string().describe('由 docx.v1.documentBlockChildren.create 返回的图片块 block_id（block_type 27）。'),
+            image_base64: zod_1.z.string().describe('图片文件内容，base64 编码（不含 data: 前缀）。'),
+            file_name: zod_1.z.string().describe("图片文件名，含扩展名，例如 'chart.png'。"),
+            document_id: zod_1.z
+                .string()
+                .describe('该块所属的 document_id/token。文档位于知识库/共享空间时需要以正确路由上传；个人文档可省略。')
+                .optional(),
+        }),
+        useUAT: zod_1.z.boolean().describe('是否使用用户身份发起请求，false 表示使用应用身份').optional(),
+    },
+    customHandler: async (client, params, options) => {
+        var _a;
+        try {
+            const { userAccessToken } = options || {};
+            const buffer = Buffer.from(params.data.image_base64, 'base64');
+            if (!buffer.length) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: JSON.stringify({ msg: 'image_base64 is empty or invalid' }) }],
+                };
+            }
+            const file = stream_1.Readable.from(buffer);
+            const data = {
+                file_name: params.data.file_name,
+                parent_type: 'docx_image',
+                parent_node: params.data.block_id,
+                size: buffer.length,
+                file,
+                extra: params.data.document_id
+                    ? JSON.stringify({ drive_route_token: params.data.document_id })
+                    : undefined,
+            };
+            const response = userAccessToken && params.useUAT
+                ? await client.drive.media.uploadAll({ data }, lark.withUserAccessToken(userAccessToken))
+                : await client.drive.media.uploadAll({ data });
+            if (!(response === null || response === void 0 ? void 0 : response.file_token)) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: JSON.stringify({ msg: 'Image upload failed', response }) }],
+                };
+            }
+            return {
+                content: [{ type: 'text', text: JSON.stringify({ file_token: response.file_token }) }],
+            };
+        }
+        catch (error) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(((_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data) || error) }],
+            };
+        }
+    },
+};
+exports.docxBuiltinTools = [exports.larkDocxBuiltinSearchTool, exports.larkDocxBuiltinImportTool, exports.larkDocxBuiltinSetImageTool];

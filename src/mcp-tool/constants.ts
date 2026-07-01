@@ -53,6 +53,22 @@ export enum PresetName {
    * Spreadsheet tools: read, create, rename and find/replace within sheets
    */
   SHEETS_DEFAULT = 'preset.sheets.default',
+  /**
+   * Base view & dashboard management: create/patch/delete Grid, Kanban, Gantt, Gallery, Form views
+   */
+  BASE_VIEWS = 'preset.base.views',
+  /**
+   * Task list management: create/update/delete task lists, members, tasks and subtasks
+   */
+  TASK_LISTS = 'preset.task.lists',
+  /**
+   * Document comment tools: create/read/resolve comments and replies on any doc/file
+   */
+  DOC_COMMENTS = 'preset.doc.comments',
+  /**
+   * Whiteboard (Board) reader: list the nodes of a board. Board content is not API-authorable.
+   */
+  BOARD_DEFAULT = 'preset.board.default',
 }
 
 export const presetLightToolNames: ToolName[] = [
@@ -140,10 +156,15 @@ export const presetDocWriteToolNames: ToolName[] = [
   'docx.v1.documentBlockChildren.create',
   'docx.v1.documentBlockChildren.batchDelete',
   'docx.v1.documentBlockDescendant.create',
+  'docx.v1.document.convert',
+  'docx.builtin.setImage',
   'wiki.v2.spaceNode.create',
   'wiki.v2.spaceNode.updateTitle',
   'wiki.v2.spaceNode.move',
   'wiki.v2.spaceNode.moveDocsToWiki',
+  'wiki.v2.spaceNode.copy',
+  'wiki.v2.spaceNode.list',
+  'wiki.v2.space.create',
 ];
 
 // Full Base control: everything in presetBaseToolNames plus update/delete across apps,
@@ -189,6 +210,50 @@ export const presetSheetsToolNames: ToolName[] = [
   'sheets.builtin.appendValues',
 ];
 
+// Base view & dashboard management. Grid / Kanban / Gantt / Gallery / Form are *view types*
+// of a Base table (set via the view's property), not document blocks — so this is the real way
+// to create and manage them. Pair with preset.base.full for the table/record data itself.
+export const presetBaseViewToolNames: ToolName[] = [
+  'bitable.v1.appTableView.list',
+  'bitable.v1.appTableView.get',
+  'bitable.v1.appTableView.create',
+  'bitable.v1.appTableView.patch',
+  'bitable.v1.appTableView.delete',
+  'bitable.v1.appDashboard.list',
+  'bitable.v1.appDashboard.copy',
+];
+
+// Task list management. The document "task list" block only references Lark Tasks; these tools
+// let you actually build and manage the underlying task lists, tasks and subtasks.
+export const presetTaskListToolNames: ToolName[] = [
+  'task.v2.tasklist.create',
+  'task.v2.tasklist.get',
+  'task.v2.tasklist.list',
+  'task.v2.tasklist.patch',
+  'task.v2.tasklist.delete',
+  'task.v2.tasklist.tasks',
+  'task.v2.tasklist.addMembers',
+  'task.v2.tasklist.removeMembers',
+  'task.v2.task.create',
+  'task.v2.taskSubtask.create',
+];
+
+// Document/file comments. Works on any doc, sheet, base or file token.
+export const presetDocCommentToolNames: ToolName[] = [
+  'drive.v1.fileComment.create',
+  'drive.v1.fileComment.list',
+  'drive.v1.fileComment.get',
+  'drive.v1.fileComment.patch',
+  'drive.v1.fileComment.batchQuery',
+  'drive.v1.fileCommentReply.list',
+  'drive.v1.fileCommentReply.update',
+  'drive.v1.fileCommentReply.delete',
+];
+
+// Whiteboard (Board) reader. The public API only exposes listing a board's nodes; board content
+// cannot be authored via the API, so this is read-only (useful for inspecting an embedded board).
+export const presetBoardToolNames: ToolName[] = ['board.v1.whiteboardNode.list'];
+
 export const defaultToolNames: ToolName[] = [
   ...presetImToolNames,
   ...presetBaseToolNames,
@@ -209,4 +274,8 @@ export const presetTools: Record<PresetName, ToolName[]> = {
   [PresetName.BASE_FULL]: presetBaseFullToolNames,
   [PresetName.DRIVE_DEFAULT]: presetDriveToolNames,
   [PresetName.SHEETS_DEFAULT]: presetSheetsToolNames,
+  [PresetName.BASE_VIEWS]: presetBaseViewToolNames,
+  [PresetName.TASK_LISTS]: presetTaskListToolNames,
+  [PresetName.DOC_COMMENTS]: presetDocCommentToolNames,
+  [PresetName.BOARD_DEFAULT]: presetBoardToolNames,
 };
