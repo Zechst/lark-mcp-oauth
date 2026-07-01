@@ -50,7 +50,23 @@ export declare enum PresetName {
     /**
      * Spreadsheet tools: read, create, rename and find/replace within sheets
      */
-    SHEETS_DEFAULT = "preset.sheets.default"
+    SHEETS_DEFAULT = "preset.sheets.default",
+    /**
+     * Base view & dashboard management: create/patch/delete Grid, Kanban, Gantt, Gallery, Form views
+     */
+    BASE_VIEWS = "preset.base.views",
+    /**
+     * Task list management: create/update/delete task lists, members, tasks and subtasks
+     */
+    TASK_LISTS = "preset.task.lists",
+    /**
+     * Document comment tools: create/read/resolve comments and replies on any doc/file
+     */
+    DOC_COMMENTS = "preset.doc.comments",
+    /**
+     * Whiteboard (Board) reader: list the nodes of a board. Board content is not API-authorable.
+     */
+    BOARD_DEFAULT = "preset.board.default"
 }
 export declare const presetLightToolNames: ToolName[];
 export declare const presetContactToolNames: ToolName[];
@@ -65,5 +81,9 @@ export declare const presetDocWriteToolNames: ToolName[];
 export declare const presetBaseFullToolNames: ToolName[];
 export declare const presetDriveToolNames: ToolName[];
 export declare const presetSheetsToolNames: ToolName[];
+export declare const presetBaseViewToolNames: ToolName[];
+export declare const presetTaskListToolNames: ToolName[];
+export declare const presetDocCommentToolNames: ToolName[];
+export declare const presetBoardToolNames: ToolName[];
 export declare const defaultToolNames: ToolName[];
 export declare const presetTools: Record<PresetName, ToolName[]>;

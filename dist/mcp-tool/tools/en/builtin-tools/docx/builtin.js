@@ -33,7 +33,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.docxBuiltinTools = exports.larkDocxBuiltinImportTool = exports.larkDocxBuiltinSearchTool = void 0;
+exports.docxBuiltinTools = exports.larkDocxBuiltinSetImageTool = exports.larkDocxBuiltinImportTool = exports.larkDocxBuiltinSearchTool = void 0;
 const lark = __importStar(require("@larksuiteoapi/node-sdk"));
 const stream_1 = require("stream");
 const zod_1 = require("zod");
@@ -216,4 +216,75 @@ exports.larkDocxBuiltinImportTool = {
         }
     },
 };
-exports.docxBuiltinTools = [exports.larkDocxBuiltinSearchTool, exports.larkDocxBuiltinImportTool];
+// Inserting a real image into a document is a two-step flow: (1) create an empty image block
+// (block_type 27) via docx.v1.documentBlockChildren.create — that returns the image block_id —
+// then (2) upload the image bytes to that block with this tool. The docx block API alone only
+// creates the empty placeholder; the media upload (parent_type 'docx_image') fills it in.
+exports.larkDocxBuiltinSetImageTool = {
+    project: 'docx',
+    name: 'docx.builtin.setImage',
+    accessTokens: ['user', 'tenant'],
+    description: '[Feishu/Lark]-Docs-Document-Set image-Upload an image into an existing image block. First create an ' +
+        'empty image block with docx.v1.documentBlockChildren.create (block_type 27) to get its block_id, then ' +
+        'call this with the base64-encoded image bytes to populate it.',
+    schema: {
+        data: zod_1.z.object({
+            block_id: zod_1.z
+                .string()
+                .describe('The image block_id (block_type 27) returned by docx.v1.documentBlockChildren.create.'),
+            image_base64: zod_1.z.string().describe('The image file content, base64-encoded (no data: URI prefix).'),
+            file_name: zod_1.z.string().describe("Image file name including extension, e.g. 'chart.png'."),
+            document_id: zod_1.z
+                .string()
+                .describe('The document_id/token that owns the block. Required for docs hosted in a wiki/shared space so the upload routes correctly; may be omitted for a personal doc.')
+                .optional(),
+        }),
+        useUAT: zod_1.z
+            .boolean()
+            .describe('Whether to use user identity for the request, false means using application identity')
+            .optional(),
+    },
+    customHandler: async (client, params, options) => {
+        var _a;
+        try {
+            const { userAccessToken } = options || {};
+            const buffer = Buffer.from(params.data.image_base64, 'base64');
+            if (!buffer.length) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: JSON.stringify({ msg: 'image_base64 is empty or invalid' }) }],
+                };
+            }
+            const file = stream_1.Readable.from(buffer);
+            const data = {
+                file_name: params.data.file_name,
+                parent_type: 'docx_image',
+                parent_node: params.data.block_id,
+                size: buffer.length,
+                file,
+                extra: params.data.document_id
+                    ? JSON.stringify({ drive_route_token: params.data.document_id })
+                    : undefined,
+            };
+            const response = userAccessToken && params.useUAT
+                ? await client.drive.media.uploadAll({ data }, lark.withUserAccessToken(userAccessToken))
+                : await client.drive.media.uploadAll({ data });
+            if (!(response === null || response === void 0 ? void 0 : response.file_token)) {
+                return {
+                    isError: true,
+                    content: [{ type: 'text', text: JSON.stringify({ msg: 'Image upload failed', response }) }],
+                };
+            }
+            return {
+                content: [{ type: 'text', text: JSON.stringify({ file_token: response.file_token }) }],
+            };
+        }
+        catch (error) {
+            return {
+                isError: true,
+                content: [{ type: 'text', text: JSON.stringify(((_a = error === null || error === void 0 ? void 0 : error.response) === null || _a === void 0 ? void 0 : _a.data) || error) }],
+            };
+        }
+    },
+};
+exports.docxBuiltinTools = [exports.larkDocxBuiltinSearchTool, exports.larkDocxBuiltinImportTool, exports.larkDocxBuiltinSetImageTool];

@@ -56,12 +56,15 @@ services:
       #                  preset.base.full   (full Base CRUD incl. delete: apps/tables/fields/records, batch)
       #                  preset.drive.default (delete/move files & folders — also deletes docs/sheets/bases
       #                                        via drive.v1.file.delete — and manage sharing permissions)
-      #                  preset.sheets.default (read, create, rename, find/replace in spreadsheets)
-      # NOTE: wiki-node DELETE and bulk spreadsheet cell-value writes have no generated tool yet.
-      # This mirrors the live curated list: read presets + explicit im/approval/mail tools,
-      # with base/sheets upgraded to their write presets and doc.write + drive.default added.
+      #                  preset.sheets.default (read, create, rename, find/replace + cell writes)
+      #                  preset.base.views  (Grid/Kanban/Gantt/Gallery/Form views + dashboards)
+      #                  preset.task.lists  (task lists, tasks, subtasks, members)
+      #                  preset.doc.comments (create/read/resolve comments on any doc/file)
+      #                  preset.board.default (read-only: list a whiteboard's nodes)
+      # NOTE: wiki-node DELETE, board authoring, buttons, sync blocks and add-on widgets have no
+      # generated/creatable API and are intentionally absent.
       - key: LARK_TOOLS
-        value: preset.doc.default,preset.doc.write,preset.base.full,preset.calendar.default,preset.drive.default,preset.sheets.default,im.v1.chat.list,im.v1.chat.search,im.v1.message.list,im.v1.message.get,im.v1.message.create,approval.v4.task.query,approval.v4.task.approve,approval.v4.task.reject,approval.v4.instance.create,approval.v4.instance.get,approval.v4.instance.list,approval.v4.instanceComment.create,approval.v4.instanceComment.list,mail.v1.userMailboxMessage.list,mail.v1.userMailboxMessage.get,mail.v1.userMailboxMessage.send
+        value: preset.doc.default,preset.doc.write,preset.doc.comments,preset.base.full,preset.base.views,preset.calendar.default,preset.drive.default,preset.sheets.default,preset.task.lists,preset.board.default,im.v1.chat.list,im.v1.chat.search,im.v1.message.list,im.v1.message.get,im.v1.message.create,approval.v4.task.query,approval.v4.task.approve,approval.v4.task.reject,approval.v4.instance.create,approval.v4.instance.get,approval.v4.instance.list,approval.v4.instanceComment.create,approval.v4.instanceComment.list,mail.v1.userMailboxMessage.list,mail.v1.userMailboxMessage.get,mail.v1.userMailboxMessage.send
       # OAuth scopes granted to the user_access_token. Must cover the tools above. Comma/space
       # separated. Defaults to all app-granted permissions if left unset. The broad resource
       # scopes below (docx:document, bitable:app, drive:drive, wiki:wiki, sheets:spreadsheet)

@@ -160,6 +160,23 @@ Drive file management: delete and move files and folders, and manage sharing per
 ### preset.sheets.default
 Spreadsheet tools: read, create, rename, and find/replace within sheets, plus cell-value writing via the `sheets.builtin.*` tools — `setValues` (overwrite one or more ranges) and `appendValues` (add rows after the last used row). These two wrap the Sheets v2 values API, which is not part of the generated v3 tool set. Ranges use `<sheetId>!<A1>` notation; get the `sheetId` from `sheets.v3.spreadsheetSheet.query`.
 
+## Capability Presets
+
+These presets extend the write set to the sibling services that back the rich doc/collaboration features. (`preset.doc.write` also now includes `docx.v1.document.convert`, the wiki node `list`/`copy` + `wiki.v2.space.create`, and the `docx.builtin.setImage` image-upload helper.)
+
+| Preset | Tools | Notes |
+| --- | --- | --- |
+| `preset.base.views` | `bitable.v1.appTableView.list/get/create/patch/delete`, `bitable.v1.appDashboard.list/copy` | Grid / Kanban / Gantt / Gallery / Form are Base **view types**, not doc blocks — this is how you create/manage them. Pair with `preset.base.full` for the table & record data. |
+| `preset.task.lists` | `task.v2.tasklist.*` (create/get/list/patch/delete/tasks/members), `task.v2.task.create`, `task.v2.taskSubtask.create` | Build and manage the task lists that a document "task list" block references. |
+| `preset.doc.comments` | `drive.v1.fileComment.create/list/get/patch/batchQuery`, `drive.v1.fileCommentReply.list/update/delete` | Comment on any doc, sheet, base or file token. |
+| `preset.board.default` | `board.v1.whiteboardNode.list` | **Read-only.** Board (whiteboard) content cannot be authored via the API; you can only list an existing board's nodes. |
+
+### docx.builtin.setImage
+Uploads an image into an existing image block. Two-step flow: create an empty image block with `docx.v1.documentBlockChildren.create` (block_type 27) to get its `block_id`, then call `setImage` with the base64 image bytes. Pass `document_id` for docs hosted in a wiki/shared space so the upload routes correctly.
+
+### Not authorable via the API (any preset)
+Button blocks and synced blocks have no creatable block type; add-on widgets (poll, reminder, timer, info collector, timeline, etc.) exist only as opaque `add_ons` instances whose per-widget payload schemas Lark does not publish (only the timer schema is documented). These cannot be built through the public API.
+
 ## Related Documentation
 
 - [Main Documentation](../../../README.md)
